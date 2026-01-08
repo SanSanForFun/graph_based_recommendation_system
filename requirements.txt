@@ -1,0 +1,5 @@
+Django==6.0
+flake8==7.3.0
+networkx==3.6.1
+psycopg2-binary==2.9.11
+redis==7.1.0
