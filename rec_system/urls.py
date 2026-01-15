@@ -1,5 +1,8 @@
 from django.urls import path
+
 from rec_system.views import RecommendView, PreferenceView, StatsView
+
+app_name = 'rec_system'
 
 urlpatterns = [
     path('recommend/', RecommendView.as_view(), name='recommend'),

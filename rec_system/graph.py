@@ -136,7 +136,7 @@ def get_stats():
         most_popular = max(movies, key=lambda m: G.degree(m))
     return {
         "total_users": len(users),
-        "total_items": len(movies),
+        "total_movies": len(movies),
         "interactions_count": G.number_of_edges(),
-        "most_popular_item": most_popular
+        "most_popular_movie": most_popular
     }
