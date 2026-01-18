@@ -1,40 +1,65 @@
 import networkx as nx
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from .models import Interaction
 
 # Рисуем граф
 G = nx.Graph()
 
-# Определяем элементы графа
-users = ['Вася', 'Петя', 'Маша']
-movies = ['Такси', 'Красная жара', 'Терминатор', 'Хоббит', 'Сумерки']
-
-# Добавляем вершины графа
-for user in users:
-    G.add_node(user)
-
-for movie in movies:
-    G.add_node(movie)
-
-# Добавляем ребра-отношения
-G.add_edge('Вася', 'Терминатор')
-G.add_edge('Вася', 'Хоббит')
-G.add_edge('Вася', 'Такси')
-G.add_edge('Петя', 'Красная жара')
-G.add_edge('Петя', 'Терминатор')
-G.add_edge('Петя', 'Такси')
-G.add_edge('Маша', 'Сумерки')
-G.add_edge('Маша', 'Такси')
-G.add_edge('Маша', 'Хоббит')
+# Используем множества вместо списков
+users = set()
+movies = set()
 
 
-def add_preference(user: str, item: str):
-    """Добавить взаимодействие пользователя с элементом"""
+def load_graph_from_db():
+    """ Загрузка графа из ДБ """
+    global G, users, movies
+    G.clear()
+    users.clear()
+    movies.clear()
+
+    for inter in Interaction.objects.all():
+        G.add_node(inter.user, type='user')
+        G.add_node(inter.movie, type='movie')
+        G.add_edge(inter.user, inter.movie)
+        users.add(inter.user)
+        movies.add(inter.movie)
+
+
+def add_preference(user: str, items):
+    """ Добавить взаимодействие пользователя с одним или несколькими фильмами. """
+    if not user:
+        raise ValueError("Имя пользователя не может быть пустым")
+
+    # Приведение к списку
+    if isinstance(items, str):
+        items = [items]
+
+    # Очистка и фильтрация
+    items = [item.strip() for item in items if item and item.strip()]
+    if not items:
+        return
+
+    # Добавляем пользователя в граф и множество
     G.add_node(user, type='user')
-    G.add_node(item, type='movie')
-    G.add_edge(user, item)
     users.add(user)
-    movies.add(item)
+
+    new_interactions = []
+    for item in items:
+        # Обновляем граф
+        G.add_node(item, type='movie')
+        G.add_edge(user, item)
+        movies.add(item)
+
+        # Подготавливаем запись для БД
+        new_interactions.append(Interaction(user=user, movie=item))
+
+    # Сохраняем в базу
+    if new_interactions:
+        Interaction.objects.bulk_create(
+            new_interactions,
+            ignore_conflicts=True
+        )
 
 
 def personal_page_rank(user, top_k=2):
@@ -46,12 +71,6 @@ def personal_page_rank(user, top_k=2):
     watched = set(m for u, m in G.edges(user))
     movie_scores = [(m, ppr[m]) for m in movies if m not in watched]
     return sorted(movie_scores, key=lambda x: x[1], reverse=True)[:top_k]
-
-
-# Пример для пользователя Вася
-print("\nPPR-рекомендации для Васи:")
-for movie, score in personal_page_rank('Вася'):
-    print(f"  {movie}: {score:.4f}")
 
 
 def matrix():
@@ -69,7 +88,7 @@ def matrix():
     return R, user_to_idx, movie_to_idx
 
 
-def colab_filter(user, top_k=2):
+def colab_filter(user, k=2):
     """ Рекомендации на основе алгоритма коллаборативной фильтрации """
     if user not in users:
         return []
@@ -96,7 +115,7 @@ def colab_filter(user, top_k=2):
         recommendations.append((movie, score))
 
     recommendations.sort(key=lambda x: x[1], reverse=True)
-    return [movie for movie, _ in recommendations[:top_k]]
+    return [movie for movie, _ in recommendations[:k]]
 
 
 def knn(user: str, k_neighbors: int = 2, top_n: int = 3):

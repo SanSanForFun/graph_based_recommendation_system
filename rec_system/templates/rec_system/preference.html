@@ -23,26 +23,53 @@
 
     <div class="row justify-content-center">
         <div class="col-md-7 col-lg-6">
+            <!-- Сообщения (ошибки/успех) -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Форма -->
             <h4 class="mb-3 text-center">Поля для ввода</h4>
             <form class="needs-validation" novalidate method="post">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="firstName" class="form-label">Имя</label>
-                    <input type="text" class="form-control" id="firstName" name="user" placeholder="" required>
+                    <input type="text" class="form-control" id="firstName" name="user"
+                           placeholder="" required>
                     <div class="invalid-feedback">Пожалуйста, введите имя.</div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="movie" class="form-label">Фильм</label>
-                    <input type="text" class="form-control" id="movie" name="movie" placeholder="" required>
-                    <div class="invalid-feedback">Пожалуйста, введите фильм.</div>
+                    <label for="movie" class="form-label">Фильмы</label>
+                    <input type="text" class="form-control" id="movie" name="movie"
+                           placeholder="Интерстеллар, Начало, Матрица" required>
+                    <div class="invalid-feedback">Введите фильмы через запятую.</div>
                 </div>
 
                 <hr class="my-4">
                 <div class="d-grid">
-                    <button class="btn btn-primary btn-lg" type="submit">Отправить</button>
+                    <button class="btn btn-primary btn-lg" type="submit">Получить рекомендации</button>
                 </div>
             </form>
+
+            <!-- Рекомендации -->
+            {% if recommendations %}
+            <div class="mt-5">
+                <h5 class="text-center mb-3">Рекомендации для: <strong>{{ user }}</strong></h5>
+                <div class="list-group">
+                    {% for movie in recommendations %}
+                    <div class="list-group-item list-group-item-action bg-body rounded mb-2 border-0 shadow-sm">
+                        {{ movie }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

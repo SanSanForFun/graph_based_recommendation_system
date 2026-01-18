@@ -1,11 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView
+from rec_system.models import Interaction
 from .graph import add_preference, colab_filter, get_stats, knn, personal_page_rank
 from django.contrib import messages
 
 
 class RecommendView(TemplateView):
+    """ Рекомендации для пользователя """
     template_name = 'rec_system/recommendation.html'
 
     def get(self, request, *args, **kwargs):
@@ -39,24 +41,65 @@ class RecommendView(TemplateView):
 
 
 class PreferenceView(View):
+    """ Добавление предпочтений """
     template_name = 'rec_system/preference.html'
 
     def get(self, request):
         return render(request, self.template_name)
 
     def post(self, request):
-        user = request.POST.get('user')
-        movie = request.POST.get('movie')
-        if not user or not movie:
-            messages.error(request, "Имя пользователя и фильм обязательны.")
-            return render(request, self.template_name, status=400)
+        user = request.POST.get('user', '').strip()
+        movie_input = request.POST.get('movie', '').strip()
 
-        add_preference(user, movie)
-        messages.success(request, "Предпочтение сохранено!")
-        return redirect('preference')
+        if not user or not movie_input:
+            messages.error(request, "Имя и хотя бы один фильм обязательны.")
+            return render(request, self.template_name)
+
+        # Разделяем по запятой (можно использовать другой разделитель)
+        movies_list = [m.strip() for m in movie_input.split(',') if m.strip()]
+
+        try:
+            # Сохраняем предпочтения
+            add_preference(user, movies_list)
+
+            # Генерируем рекомендации
+            recommendations = colab_filter(user, k=5)  # или top_k=5, если не меняли сигнатуру
+
+        except Exception as e:
+            messages.error(request, f"Ошибка: {str(e)}")
+            recommendations = []
+
+        return render(request, self.template_name, {
+            'user': user,
+            'recommendations': recommendations,
+        })
+
+
+class PrefListView(View):
+    """ Список фильмов пользователя """
+    template_name = 'rec_system/pref_list.html'
+
+    def get(self, request):
+        user = request.GET.get('user', '').strip()
+
+        if not user:
+            return render(request, self.template_name, {
+                'error': 'Параметр "user" обязателен'
+            })
+
+        # Получаем фильмы из БД
+        movies = Interaction.objects.filter(user=user).values_list('movie', flat=True).distinct()
+        movies_list = list(movies)
+
+        # Передаём в шаблон
+        return render(request, self.template_name, {
+            'user': user,
+            'movies': movies_list,
+        })
 
 
 class StatsView(TemplateView):
+    """ Отображение статистики системы """
     template_name = 'rec_system/statistic.html'
 
     def get_context_data(self, **kwargs):
