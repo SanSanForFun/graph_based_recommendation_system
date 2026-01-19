@@ -1,8 +1,8 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from graph import users, movies, G
+from rec_system.graph import users, movies, G
 
-# 1. Строим матрицу пользователь–фильм
+# Строим матрицу пользователь–фильм
 user_to_idx = {user: i for i, user in enumerate(users)}
 movie_to_idx = {movie: j for j, movie in enumerate(movies)}
 R = np.zeros((len(users), len(movies)), dtype=int)
@@ -13,11 +13,11 @@ for u, m in G.edges():
     elif m in user_to_idx and u in movie_to_idx:
         R[user_to_idx[m], movie_to_idx[u]] = 1
 
-# 2. Сходство пользователей
+# Сходство пользователей
 user_similarity = cosine_similarity(R)
 
 
-# 3. Функция рекомендаций
+# Функция рекомендаций
 def recommend_movies_for_user(target_user, top_k=2):
     u_idx = user_to_idx[target_user]
     recommendations = []
@@ -35,7 +35,7 @@ def recommend_movies_for_user(target_user, top_k=2):
     return sorted(recommendations, key=lambda x: x[1], reverse=True)[:top_k]
 
 
-# 4. Вывод рекомендаций
+# Вывод рекомендаций
 print("\n" + "=" * 50)
 print("РЕКОМЕНДАЦИИ ЧЕРЕЗ КОЛЛАБОРАТИВНУЮ ФИЛЬТРАЦИЮ")
 print("=" * 50)

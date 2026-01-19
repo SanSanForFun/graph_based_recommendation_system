@@ -1,6 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from graph import G, users, movies
+from rec_system.graph import G, users, movies
 
 # Вычисляем PageRank
 pagerank = nx.pagerank(G, alpha=0.85)  # alpha — коэффициент затухания (по умолчанию 0.85)

@@ -1,8 +1,8 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from graph import users, movies, G
+from rec_system.graph import users, movies, G
 
-# 1. Построим матрицу пользователь–фильм (бинарную)
+# Строим матрицу пользователь–фильм
 user_to_idx = {u: i for i, u in enumerate(users)}
 movie_to_idx = {m: j for j, m in enumerate(movies)}
 
@@ -13,11 +13,11 @@ for u, m in G.edges():
     elif m in user_to_idx and u in movie_to_idx:
         R[user_to_idx[m], movie_to_idx[u]] = 1
 
-# 2. Вычислим попарное сходство (косинус)
+# Вычислим попарное сходство (косинус)
 user_sim = cosine_similarity(R)
 
 
-# 3. Функция: найти k ближайших пользователей
+# Функция: найти k ближайших пользователей
 def find_k_nearest_users(target_user, k=2):
     u_idx = user_to_idx[target_user]
     # Исключаем самого себя (сходство = 1.0)
@@ -27,7 +27,7 @@ def find_k_nearest_users(target_user, k=2):
     return [(users[i], similarities[i]) for i in nearest_indices]
 
 
-# 4. Пример: найти 2 ближайших к первому пользователю
+# Пример: найти 2 ближайших к первому пользователю
 target = users[0]
 k = 2
 nearest = find_k_nearest_users(target, k)
@@ -36,12 +36,12 @@ for user, sim in nearest:
     print(f"  {user} (сходство: {sim:.3f})")
 
 
-# 5. Рекомендация на основе k-NN
+# Рекомендация на основе k-NN
 def knn_recommend(target_user, k=2, top_n=2):
     neighbors = find_k_nearest_users(target_user, k)
     neighbor_indices = [user_to_idx[u] for u, _ in neighbors]
 
-    # Суммируем оценки соседей (бинарные)
+    # Суммируем оценки соседей
     scores = np.sum(R[neighbor_indices], axis=0)
 
     # Исключаем уже просмотренные

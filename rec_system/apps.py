@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 
+
 class RecSystemConfig(AppConfig):
     """ Загрузка графа из БД """
     default_auto_field = 'django.db.models.BigAutoField'
