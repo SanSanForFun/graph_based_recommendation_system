@@ -4,8 +4,11 @@ from django.views.generic import TemplateView
 from rec_system.models import Interaction
 from .graph import add_preference, colab_filter, get_stats, knn, personal_page_rank
 from django.contrib import messages
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class RecommendView(TemplateView):
     """ Рекомендации для пользователя """
     template_name = 'rec_system/recommendation.html'
@@ -40,6 +43,7 @@ class RecommendView(TemplateView):
         return render(request, self.template_name, context)
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class PreferenceView(View):
     """ Добавление предпочтений """
     template_name = 'rec_system/preference.html'
@@ -55,7 +59,7 @@ class PreferenceView(View):
             messages.error(request, "Имя и хотя бы один фильм обязательны.")
             return render(request, self.template_name)
 
-        # Разделяем по запятой (можно использовать другой разделитель)
+        # Разделяем по запятой
         movies_list = [m.strip() for m in movie_input.split(',') if m.strip()]
 
         try:
